@@ -54,7 +54,7 @@ pub fn Sender(comptime Writer: type, comptime capacity: usize) type {
                 }
             }
 
-            // send 'em all 
+            // send 'em all
             try self.put("\r\n");
             return self.flush();
         }
@@ -110,7 +110,7 @@ pub fn Sender(comptime Writer: type, comptime capacity: usize) type {
         }
 
         fn maskBytes(self: Self, buf: []u8, source: []const u8, pos: usize) void {
-            for (source) |c, i|
+            for (source, 0..) |c, i|
                 buf[i] = c ^ self.mask[(i + pos) % 4];
         }
 
@@ -130,7 +130,7 @@ pub fn Sender(comptime Writer: type, comptime capacity: usize) type {
 
             while (current_chunk < num_of_chunks) : (current_chunk += 1) {
                 pos = current_chunk * MASK_BUFFER_SIZE;
-                const chunk = data[pos..pos + MASK_BUFFER_SIZE];
+                const chunk = data[pos .. pos + MASK_BUFFER_SIZE];
 
                 self.maskBytes(buf[0..], chunk, pos);
                 try self.put(buf[0..]);
@@ -141,7 +141,7 @@ pub fn Sender(comptime Writer: type, comptime capacity: usize) type {
 
             // got remainder
             pos += MASK_BUFFER_SIZE;
-            const chunk = data[pos..pos + remainder];
+            const chunk = data[pos .. pos + remainder];
 
             self.maskBytes(&buf, chunk, pos);
             return self.put(buf[0..remainder]);
@@ -220,15 +220,13 @@ pub fn Sender(comptime Writer: type, comptime capacity: usize) type {
             try self.putHeader(.{
                 .len = 0,
                 .opcode = switch (opcode) {
-                    .text, .binary,
-                    .continuation => opcode,
+                    .text, .binary, .continuation => opcode,
                     .end => .continuation,
 
                     else => return error.UnknownOpcode,
                 },
                 .fin = switch (opcode) {
-                    .text, .binary,
-                    .continuation => false,
+                    .text, .binary, .continuation => false,
                     .end => true,
 
                     else => return error.UnknownOpcode,
